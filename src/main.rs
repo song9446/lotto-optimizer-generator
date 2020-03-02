@@ -1,4 +1,4 @@
-//use actix_files as fs;
+use actix_files as fs;
 use actix_web::{get, web, App, HttpServer, Responder, HttpResponse, http::StatusCode, Result};
 
 #[get("/")]
@@ -9,7 +9,7 @@ async fn index() ->  Result<HttpResponse> {
 }
 
 #[get("/gen/{num}")]
-async fn gen(num: web::Path<(u32)>) -> impl Responder {
+async fn gen(num: web::Path<(u32)>) -> Result<fs::NamedFile> {
     Ok(fs::NamedFile::open(format!("optimal_lotto_number_sets/{}.txt", num))?)
 }
 
