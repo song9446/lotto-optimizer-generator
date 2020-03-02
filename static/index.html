@@ -51,7 +51,7 @@ table tfoot td{
             <td>4등 (5만원)</td> <td></td> <td> </td> <td> </td><td> </td>
         </tr>
         <tr>
-            <td>5등 (5천원)</td> <td></td> <td> </td> <td> </td><td> </td>
+            <td>5등 (5천원)</td> <td>계산중..</td> <td> </td> <td> </td><td> </td>
         </tr>
         </tbody>
         <tfoot>
@@ -86,15 +86,77 @@ function gen_tickets_optimized(){
 }
 function calc_expectation(){
     expectation_report_el.classList.remove("hidden");
+    await sleep(1);
     expectation_summary_el.innerText = "0원";
     let tickets = tickets_input.value;
-    tickets = tickets.trim().split("\n").map(line => line.trim().split(" ").filter(x=>x)).filter(x=>x);
+    tickets = tickets.trim().split("\n").map(line => line.trim().split(" ").filter(x=>x).map(x=>parseInt(x))).filter(x=>x);
     let total = 45*44*43*42*41*40/6/5/4/3/2;
     report(1, tickets.length, total, 1000000000)
-    get_covered_tickets_for_5th_prize(tickets);
-    get_covered_tickets_for_4th_prize(tickets);
+    get_covered_tickets_for_5th_prize2(tickets).then(_ =>
+        get_covered_tickets_for_4th_prize(tickets).then(_ =>
     get_covered_tickets_for_3th_prize(tickets).then(p => 
-        report(2, Math.floor(p*total/49), total, 80000000));
+        report(2, Math.floor(p*total/49), total, 80000000))));
+}
+async function get_covered_tickets_for_5th_prize2(tickets){
+    const total = 45*44*43*42*41*40/6/5/4/3/2;
+    function encode(a,b,c) {
+        return a*46*46 + b*46 + c
+    }
+    function choose(a,b,c,d,e,f,i) {
+        if(i==0) return a;
+        else if(i==1) return b;
+        else if(i==2) return c;
+        else if(i==3) return d;
+        else if(i==4) return e;
+        else if(i==5) return f;
+    }
+    let tickets_map = Array(43*44*45).fill(false);
+    let a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p, x,y,z,ticket;
+    for(n=0, l=tickets.length; n<l; ++n) {
+        tickets[n] = tickets[n].sort((a,b)=>a-b);
+    }
+    for(n=0, l=tickets.length; n<l; ++n) {
+        ticket = tickets[n];
+        for(i=0; i<4; ++i){
+            for(j=i+1; j<5; ++j){
+                for(k=j+1; k<6; ++k){
+                    a = ticket[i]; b = ticket[j]; c = ticket[k];
+                    tickets_map[encode(a, b, c)] = true;
+                }
+            }
+        }
+    }
+    let coverage = 0;
+    for(a=1; a<=40; ++a){
+        expectation_report_body_el.rows[4].children[1].innerText = `계산중..${a}/${40}`;
+        for(b=a+1; b<=41; ++b){
+            for(c=b+1; c<=42; ++c){
+                for(d=c+1; d<=43; ++d){
+                    for(e=d+1; e<=44; ++e){
+                        for(f=e+1; f<=45; ++f){
+                            inner_loop:
+                            for(i=0; i<4; ++i){
+                                for(j=i+1; j<5; ++j){
+                                    for(k=j+1; k<6; ++k){
+                                        x = choose(a,b,c,d,e,f,i); 
+                                        y = choose(a,b,c,d,e,f,j); 
+                                        z = choose(a,b,c,d,e,f,k);
+                                        if(tickets_map[encode(x,y,z)]){
+                                            coverage += 1;
+                                            break inner_loop;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        await sleep(1);
+    }
+    report(5, coverage, total, 5000);
+    return coverage/total;
 }
 async function get_covered_tickets_for_5th_prize(tickets){
     let total = 45*44*43*42*41*40/6/5/4/3/2;
@@ -126,6 +188,7 @@ async function get_covered_tickets_for_5th_prize(tickets){
     report(5, coverage, total, 5000);
     return coverage/total;
 }
+
 async function get_covered_tickets_for_4th_prize(tickets){
     let total = 45*44*43*42*41*40/6/5/4/3/2;
     let tickets_dict = {};
