@@ -20,7 +20,7 @@ table tfoot td{
 <body class="w-full p-6 flex flex-col items-start">
     <div>
         <label for="gen_tickets_num p-2">로또번호 갯수</label>
-        <input id="gen_tickets_num_input" class="ml-1 border border-black p-2 w-12" value="50"></input>
+        <input type="number" id="gen_tickets_num_input" class="ml-1 border border-black p-2 w-16" value="50" min="1" max="100" step="1"></input>
     </div>
     <div>
         <button onclick="gen_tickets_random()" class="bg-black text-white p-2 mt-2"> 랜덤 로또번호셋 생성 </button>
