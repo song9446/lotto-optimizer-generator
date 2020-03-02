@@ -1,0 +1,246 @@
+<html>
+<head>
+<link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
+<style>
+table th{
+    text-align: center;
+}
+table td{
+    padding-left: 1em;
+    padding-right: 1em;
+    border: 1px solid gray;
+}
+table tfoot td{
+    /*text-align: center;*/
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body class="w-full p-6 flex flex-col items-start">
+    <div>
+        <label for="gen_tickets_num p-2">로또번호 갯수</label>
+        <input id="gen_tickets_num_input" class="ml-1 border border-black p-2 w-12" value="50"></input>
+    </div>
+    <div>
+        <button onclick="gen_tickets_random()" class="bg-black text-white p-2 mt-2"> 랜덤 로또번호셋 생성 </button>
+        <button onclick="gen_tickets_optimized()" class="bg-red-600 text-white p-2 mt-2 ml-2"> 최적화 로또번호셋 생성 </button>
+    </div>
+    <textarea id="tickets_input" class="border border-dotted border-black mt-2 w-full flex-1">
+    </textarea>
+    <button onclick="calc_expectation()" class="bg-black text-white p-2 mt-2"> 로또번호셋 검증 </button>
+    <table id="expectation_report" class="mt-2 hidden">
+        <thead>
+            <th>등수</th>
+            <th>커버된 조합</th>
+            <th>전체 조합</th>
+            <th>커버리지</th>
+            <th>기댓값</th>
+        </thead>
+        <tbody id="expectation_report_body">
+        <tr>
+            <td>1등 (10억원)</td> <td></td> <td> </td> <td> </td><td> </td>
+        </tr>
+        <tr>
+            <td>2등 (8천만원)</td> <td></td> <td> </td> <td> </td><td> </td>
+        </tr>
+        <tr>
+            <td>3등 (150만원)</td> <td></td> <td> </td> <td> </td><td> </td>
+        </tr>
+        <tr>
+            <td>4등 (5만원)</td> <td></td> <td> </td> <td> </td><td> </td>
+        </tr>
+        <tr>
+            <td>5등 (5천원)</td> <td></td> <td> </td> <td> </td><td> </td>
+        </tr>
+        </tbody>
+        <tfoot>
+            <tr> <td colspan="4">총 기댓값</td> <td id="expectation_summary"></td> </tr>
+        </tfoot>
+    </div>
+<script>
+let tickets_input = document.getElementById("tickets_input");
+let gen_tickets_num_input = document.getElementById("gen_tickets_num_input");
+let expectation_report_el = document.getElementById("expectation_report");
+let expectation_report_body_el = document.getElementById("expectation_report_body");
+let expectation_summary_el = document.getElementById("expectation_summary");
+function gen_tickets_random(){
+    let n = gen_tickets_num_input.value,
+        tickets = [];
+    for(; n>0; --n) {
+        let ticket = [];
+        for(let i=6; i>0; --i){
+            let next_number = 1 + Math.floor(Math.random()*45);
+            while(ticket.indexOf(next_number) >= 0)
+                next_number =  1 + Math.floor(Math.random()*45);
+            ticket.push(next_number);
+        }
+        tickets.push(ticket.sort((a,b) => a-b));
+    }
+    tickets_input.value = tickets.map(t => t.join(" ")).join("\n");
+}
+function gen_tickets_optimized(){
+    tickets_input.value = `2 10 13 26 28 33
+10 16 22 25 31 41
+7 13 30 35 38 45
+1 7 8 22 27 28
+4 12 28 30 31 40
+1 20 21 25 26 40
+6 7 14 16 18 36
+5 15 18 26 32 35
+11 14 19 22 40 45
+9 26 29 36 40 41
+21 22 24 32 42 44
+2 8 14 35 39 40
+3 4 13 22 36 43
+14 17 28 29 32 34
+3 5 20 41 44 45
+4 5 27 29 37 39
+7 17 26 39 43 44
+2 5 7 19 21 31
+6 12 15 19 34 43
+5 13 14 25 42 43
+9 15 25 28 37 45
+11 16 26 27 30 42
+16 23 29 32 43 45
+1 5 6 10 29 38
+11 21 28 38 39 41
+12 13 18 21 37 44
+27 31 34 35 36 44
+10 12 17 24 27 45
+15 23 33 38 40 44
+7 11 24 25 29 33
+14 24 26 31 37 38
+6 11 17 20 35 37
+9 10 14 21 23 30
+2 9 11 12 32 44
+3 8 15 29 30 42
+3 9 16 24 28 35
+1 2 4 15 16 17
+2 3 6 23 25 27
+9 17 18 19 38 42
+13 15 19 20 27 41
+4 6 21 33 34 45
+1 9 31 33 39 43
+5 8 11 17 23 36
+1 19 30 32 36 37
+1 12 23 35 41 42
+18 20 22 23 34 39
+4 8 10 18 19 25
+2 18 24 30 41 43
+8 12 16 20 33 38
+3 7 10 32 34 40`;
+}
+function calc_expectation(){
+    expectation_report_el.classList.remove("hidden");
+    expectation_summary_el.innerText = "0원";
+    let tickets = tickets_input.value;
+    tickets = tickets.trim().split("\n").map(line => line.trim().split(" ").filter(x=>x)).filter(x=>x);
+    let total = 45*44*43*42*41*40/6/5/4/3/2;
+    report(1, tickets.length, total, 1000000000)
+    get_covered_tickets_for_5th_prize(tickets);
+    get_covered_tickets_for_4th_prize(tickets);
+    get_covered_tickets_for_3th_prize(tickets).then(p => 
+        report(2, Math.floor(p*total/49), total, 80000000));
+}
+async function get_covered_tickets_for_5th_prize(tickets){
+    let total = 45*44*43*42*41*40/6/5/4/3/2;
+    let tickets_dict = {};
+    for(let n=0, l=tickets.length; n<l; ++n) {
+        let ticket = tickets[n];
+        expectation_report_body_el.rows[4].children[1].innerText = `계산중..${n}/${l}`;
+        for(let i=0; i<4; ++i){
+            for(let j=i+1; j<5; ++j){
+                for(let k=j+1; k<6; ++k){
+                    let a = ticket[i], b = ticket[j], c = ticket[k];
+                    for(let d=1; d<=43; ++d){
+                        for(let e=d+1; e<=44; ++e){
+                            for(let f=e+1; f<=45; ++f){
+                                if(d == a || d == b || d == c ||
+                                    e == a || e == b || e == c ||
+                                    f == a || f == b || f == c)
+                                    continue;
+                                tickets_dict[[a, b, c, d, e, f].sort()] = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        await sleep(1);
+    }
+    let coverage = Object.keys(tickets_dict).length;
+    report(5, coverage, total, 5000);
+    return coverage/total;
+}
+async function get_covered_tickets_for_4th_prize(tickets){
+    let total = 45*44*43*42*41*40/6/5/4/3/2;
+    let tickets_dict = {};
+    for(let n=0, l=tickets.length; n<l; ++n) {
+        let ticket = tickets[n];
+        expectation_report_body_el.rows[3].children[1].innerText = `계산중..${n}/${l}`;
+        for(let i=0; i<3; ++i){
+            for(let j=i+1; j<4; ++j){
+                for(let k=j+1; k<5; ++k){
+                    for(let p=k+1; p<6; ++p){
+                        let a = ticket[i], b = ticket[j], c = ticket[k], d = ticket[p];
+                        for(let e=1; e<=44; ++e){
+                            for(let f=e+1; f<=45; ++f){
+                                if( e == a || e == b || e == c || e == d ||
+                                    f == a || f == b || f == c || f == d)
+                                    continue;
+                                tickets_dict[[a, b, c, d, e, f].sort()] = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        await sleep(1);
+    }
+    let coverage = Object.keys(tickets_dict).length;
+    report(4, coverage, total, 50000);
+    return coverage/total;
+}
+async function get_covered_tickets_for_3th_prize(tickets){
+    let total = 45*44*43*42*41*40/6/5/4/3/2;
+    let tickets_dict = {};
+    for(let n=0, l=tickets.length; n<l; ++n) {
+        let ticket = tickets[n];
+        expectation_report_body_el.rows[2].children[1].innerText = `계산중..${n}/${l}`;
+        for(let i=0; i<2; ++i){
+            for(let j=i+1; j<3; ++j){
+                for(let k=j+1; k<4; ++k){
+                    for(let p=k+1; p<5; ++p){
+                        for(let q=p+1; q<6; ++q){
+                            let a = ticket[i], b = ticket[j], c = ticket[k], d = ticket[p], e = ticket[q];
+                            for(let f=1; f<=45; ++f){
+                                if( f == a || f == b || f == c || f == d || f == e)
+                                    continue;
+                                tickets_dict[[a, b, c, d, e, f].sort()] = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        await sleep(1);
+    }
+    let coverage = Object.keys(tickets_dict).length;
+    report(3, coverage, total, 1500000);
+    return coverage/total;
+}
+function report(nth, coverage, total, prize) {
+    expectation_report_body_el.rows[nth-1].children[1].innerText = `${coverage}`; 
+    expectation_report_body_el.rows[nth-1].children[2].innerText = `${total}`; 
+    expectation_report_body_el.rows[nth-1].children[3].innerText = `${(coverage*100/total).toFixed(2)}%`;
+    expectation_report_body_el.rows[nth-1].children[4].innerText = `${(prize*coverage/total).toFixed()}원`
+    expectation_summary_el.innerText = `${(parseInt(expectation_summary_el.innerText || "0") + prize*coverage/total).toFixed()}원`
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+</script>
+</body>
+</html>
