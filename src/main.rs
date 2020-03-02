@@ -8,9 +8,9 @@ async fn index() ->  Result<HttpResponse> {
         .body(include_str!("../static/index.html")))
 }
 
-#[get("/expectation?")]
-async fn expectation() -> impl Responder {
-    format!("Hello")
+#[get("/gen/{num}")]
+async fn gen(num: web::Path<(u32)>) -> impl Responder {
+    Ok(fs::NamedFile::open(format!("optimal_lotto_number_sets/{}.txt", num))?)
 }
 
 #[actix_rt::main]
@@ -18,7 +18,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| 
         App::new()
             .service(index)
-            .service(expectation))
+            .service(gen))
         .bind("127.0.0.1:8080")?
         .run()
         .await
