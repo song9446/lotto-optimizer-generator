@@ -84,7 +84,10 @@ function gen_tickets_optimized(){
         .then(res => res.text())
         .then(tickets => tickets_input.value = tickets);
 }
-function calc_expectation(){
+calculating = false;
+async function calc_expectation(){
+    if(calculating) return;
+    calculating = true;
     expectation_report_el.classList.remove("hidden");
     await sleep(1);
     expectation_summary_el.innerText = "0원";
@@ -94,8 +97,10 @@ function calc_expectation(){
     report(1, tickets.length, total, 1000000000)
     get_covered_tickets_for_5th_prize2(tickets).then(_ =>
         get_covered_tickets_for_4th_prize(tickets).then(_ =>
-    get_covered_tickets_for_3th_prize(tickets).then(p => 
-        report(2, Math.floor(p*total/49), total, 80000000))));
+            get_covered_tickets_for_3th_prize(tickets).then(p => {
+                report(2, Math.floor(p*total/49), total, 80000000);
+                calculating = false;
+            })));
 }
 async function get_covered_tickets_for_5th_prize2(tickets){
     const total = 45*44*43*42*41*40/6/5/4/3/2;
