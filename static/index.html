@@ -187,8 +187,11 @@ function report(nth, coverage, total, prize) {
     expectation_report_body_el.rows[nth-1].children[1].innerText = `${coverage}`; 
     expectation_report_body_el.rows[nth-1].children[2].innerText = `${total}`; 
     expectation_report_body_el.rows[nth-1].children[3].innerText = `${(coverage*100/total).toFixed(2)}%`;
-    expectation_report_body_el.rows[nth-1].children[4].innerText = `${(prize*coverage/total).toFixed()}원`
-    expectation_summary_el.innerText = `${(parseInt(expectation_summary_el.innerText || "0") + prize*coverage/total).toFixed()}원`
+    expectation_report_body_el.rows[nth-1].children[4].innerText = `${(prize*coverage/total).toFixed()}원`;
+    if(nth == 1 || nth == 2)
+        expectation_report_body_el.rows[nth-1].children[4].innerText = `체감상 0원`;
+    else
+        expectation_summary_el.innerText = `${(parseInt(expectation_summary_el.innerText || "0") + prize*coverage/total).toFixed()}원`
 }
 
 function sleep(ms) {
